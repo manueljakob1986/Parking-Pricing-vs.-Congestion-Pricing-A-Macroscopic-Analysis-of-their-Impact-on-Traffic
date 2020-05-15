@@ -129,6 +129,7 @@ switch_on_real_time_information_parking_pr_capacity = c19_input_switch_on_real_t
     average_driving_distance_PT = c18_input_network_block_length*(sqrt(c24_input_number_of_PT_stops)/2)*(-1/2 + sqrt(1/4 + L/(2*c18_input_network_block_length))) + 5*c18_input_network_block_length;
     
     PT_speed(1,1) = 0.116*speed(1,1)+9.574; %3D-MFD for Zurich
+    PT_speed_pq(1,1) = 0.116*speed(1,1)+9.574; %3D-MFD for Zurich
 %     PT_speed(1,1) = speed(1,1)* ((average_driving_distance_PT/speed(1,1)) / ((average_driving_distance_PT/speed(1,1)) + c25_input_average_dwell_time_PT_stops));
     
     Nns_1(1,1)=0;   Nns_2(1,1)=0;    Nns_3(1,1)=0;
@@ -274,9 +275,12 @@ while i<1440
     Ns(i+1,1)    = Ns_3(i+1,1);
     
     density_car(i+1,1)=(Nns(i+1,1)+Ns(i+1,1))/Lnetwork; %3D-MFD for Zurich
-    density_PT(i+1,1)=1/Lnetwork; %3D-MFD for Zurich
-    
+    PT_speed_pq(i+1,1) = (0.116*v + 0.116*(-0.288)*density_car(i+1,1) + 9.574)/2 + ...
+        sqrt(((0.116*v + 0.116*(-0.288)*density_car(i+1,1) + 9.574)/2)^2 + (0.116*(-5.659)*2*average_driving_distance_PT)/(c22_input_average_headway*Lnetwork)); %3D-MFD for Zurich
+    density_PT(i+1,1)=2*average_driving_distance_PT/(PT_speed_pq(i+1,1)*c22_input_average_headway*Lnetwork); %3D-MFD for Zurich
+
     speed(i+1,1) = v + (-0.288)*density_car(i+1,1) + (-5.659)*density_PT(i+1,1); %3D-MFD for Zurich
+    PT_speed(i+1,1) = 0.116*speed(i+1,1)+9.574; %3D-MFD for Zurich
     
 %     if density_car(i+1,1)<=kc
 %         speed(i+1,1)=v;
@@ -338,8 +342,6 @@ while i<1440
          
          average_driving_distance_PT = c18_input_network_block_length*(sqrt(c24_input_number_of_PT_stops)/2)*(-1/2 + sqrt(1/4 + L/(2*c18_input_network_block_length))) + 5*c18_input_network_block_length;
          
-
-         PT_speed(i+1,1) = 0.116*speed(i+1,1)+9.574; %3D-MFD for Zurich
 %          PT_speed(i+1,1) = speed(i+1,1)* ((average_driving_distance_PT/speed(i+1,1)) / ...
 %              ((average_driving_distance_PT/speed(i+1,1)) + c25_input_average_dwell_time_PT_stops));
 
@@ -618,12 +620,13 @@ set(gca,'yticklabel',yticklabel)% Sets tick labels back on the Axis
 
 %% -------------------------------------------------------------------------number of searchers
 figure
-plot(time/60,Ns,'--.','LineWidth',4)
+plot(time/60,Ns,'r-','LineWidth',4)
 hold on
-plot(time/60,availableparking_3,'LineWidth',4)
+plot(time/60,availableparking_3,'b--','LineWidth',4)
 xlabel('Hour of the day')
 ylabel('Number')
-legend('Searching cars','Available parking spaces in the area')
+leg = legend('Searching cars in the area','Available parking spaces in the area');
+leg.ItemTokenSize = [50,18];
 set(gca,'FontSize',24)
 axis([0 24 0 30])
 ax = gca;
